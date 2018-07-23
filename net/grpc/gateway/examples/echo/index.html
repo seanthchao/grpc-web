@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<html>
+<head>
+  <title>protobufCARTATest</title>
+
+  <!-- <script src="https://cdn.rawgit.com/dcodeIO/protobuf.js/6.8.6/dist/protobuf.js"></script> -->
+  <!-- See: https://github.com/dcodeIO/long.js -->
+  <script src="lib/dcodeIO/long.min.js"></script>
+  <!-- See: https://github.com/dcodeIO/bytebuffer.js -->
+  <script src="lib/dcodeIO/bytebuffer.min.js"></script>
+  <!-- See: https://github.com/dcodeIO/protobuf.js -->
+  <script src="lib/dcodeIO/protobuf.min.js"></script>
+  <!-- See: https://github.com/hsk81/protobuf-rpc-js -->
+  <script src="lib/dcodeIO/protobuf-rpc.min.js"></script>
+  <script>
+    //BEGIN SETUP
+    var HelloWorld;
+    var helloWorld;
+    var buffer, testDecode;
+
+    var defer = function (fn, ms) {
+        return function () {
+            return setTimeout(fn, ms||0);
+        }
+    };
+
+    var SYSTEM = {
+        Api: (function () {
+            var factory = dcodeIO.ProtoBuf.loadProtoFile({
+                root: 'protocol', file: 'api.proto'
+            });
+
+            return factory.build();
+        }()),
+
+        Service: function (service_cls, opts) {
+            return dcodeIO.ProtoBuf.Rpc(service_cls, opts);
+        },
+
+        Transport: dcodeIO.ProtoBuf.Rpc.Transport
+    };
+
+    var SERVICE = {
+        // Fl: (function () {
+        //     return SYSTEM.Service(SYSTEM.Api.CARTA.FileListService, {
+        //         // url: 'ws://localhost:8089'
+        //         url: 'ws://localhost:3002'
+        //     });
+        // }()),
+
+        grpcTest: (function () {
+            return SYSTEM.Service(SYSTEM.Api.grpc.gateway.testing.EchoService, {
+                transport: new SYSTEM.Transport.Xhr({sync: true}),
+                // url: 'http://localhost:8080'
+                url: 'http://' + window.location.hostname + ':8080'
+                // url: 'http://0.0.0.0:8080'
+                   // url: 'ws://localhost:8080'
+            });
+        }())
+
+    };
+
+    SERVICE.grpcTest.transport.socket.onopen = defer(function () {
+        var m_req = new SYSTEM.Api.grpc.gateway.testing.EchoRequest({
+            message: "Ping! "
+        });
+        console.log("Connected. With req: ", m_req,  );
+        SERVICE.grpcTest.Echo(m_req, function (err, m_res) {
+            console.log('[on:Echo]', m_res, err);
+        });
+    });
+
+    // SERVICE.Fl.transport.socket.onopen = defer(function () {
+    //     var m_req = new SYSTEM.Api.CARTA.FileListRequest({
+    //         directory: "exroot/image"
+    //     });
+    //     console.log("WebSocket connected. With req: ", m_req);
+    //
+    //     SERVICE.Fl.GetFileList(m_req, function (err, m_res) {
+    //         console.log('[on:GetFileList]', m_req, m_res, err);
+    //     });
+    // });
+
+    // SERVICE.Lm.transport.socket.onopen = defer(function () {
+    //     var sub_hello = new SYSTEM.Api.Lm.HelloworldRequest({
+    //         id: 101,
+    //         str: "hello"
+    //     });
+    //     console.log("WebSocket connected.");
+    //
+    //     SERVICE.Lm.sub(sub_hello, function (err, sub_res) {
+    //         console.log('[on:sub]', sub_hello, sub_res, err);
+    //     });
+    // });
+
+
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="row" id="first">
+      <div class="form-group">
+        <div class="input-group">
+          <input type="text" class="form-control" id="msg">
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button" id="send">Send
+            </button>
+          </span>
+        </div>
+        <p class="help-block">Example: "Hello", "4 Hello"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- <textarea id="output"></textarea><br />
+  <button onClick="sendMessage();">Send</button> -->
+</body>
+</html>
